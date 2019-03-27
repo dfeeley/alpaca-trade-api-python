@@ -8,13 +8,15 @@ from . import polygon
 
 
 class StreamConn(object):
-    def __init__(self, key_id=None, secret_key=None, base_url=None):
+    def __init__(self, key_id=None, secret_key=None, base_url=None, **kwargs):
         self._key_id, self._secret_key = get_credentials(key_id, secret_key)
         base_url = re.sub(r'^http', 'ws', base_url or get_base_url())
         self._endpoint = base_url + '/stream'
         self._handlers = {}
         self._base_url = base_url
         self._ws = None
+        self._health_check_interval = kwargs.get('health_check_interval', 10)
+        self._health_check_running = False
         self.polygon = None
 
     async def _connect(self):
@@ -40,8 +42,20 @@ class StreamConn(object):
         self._ws = ws
         await self._dispatch('authorized', msg)
 
+        if not self._health_check_running:
+            asyncio.ensure_future(self._health_check())
         asyncio.ensure_future(self._consume_msg())
         return ws
+
+    async def _health_check(self):
+        self._health_check_running = True
+        while True:
+            try:
+                print('in periodic health check')
+                await self._ensure_ws()
+                await asyncio.sleep(self._health_check_interval)
+            except Exception as ex:
+                print('Health check - caught exception {}'.format(ex))
 
     async def _consume_msg(self):
         ws = self._ws
