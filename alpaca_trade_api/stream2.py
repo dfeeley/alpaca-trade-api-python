@@ -51,7 +51,7 @@ class StreamConn(object):
         self._health_check_running = True
         while True:
             try:
-                print('in periodic health check')
+                # print('in periodic health check')
                 await self._ensure_ws()
                 await asyncio.sleep(self._health_check_interval)
             except Exception as ex:
