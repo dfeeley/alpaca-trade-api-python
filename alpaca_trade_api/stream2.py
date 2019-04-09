@@ -83,8 +83,10 @@ class StreamConn(object):
         await self.polygon.connect()
 
     async def _ensure_ws(self):
-        if self._ws is not None:
+        if self._ws is not None and not self._ws.closed:
+            print('passed health check ok')
             return
+        print('in _ensure_ws() -- ws is None, starting connect')
         self._ws = await self._connect()
 
     async def subscribe(self, channels):
