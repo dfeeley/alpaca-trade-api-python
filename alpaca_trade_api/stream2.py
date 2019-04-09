@@ -1,10 +1,13 @@
 import asyncio
+import logging
 import json
 import re
 import websockets
 from .common import get_base_url, get_credentials
 from .entity import Account, Entity
 from . import polygon
+
+logger = logging.getLogger(__name__)
 
 
 class StreamConn(object):
@@ -17,6 +20,8 @@ class StreamConn(object):
         self._ws = None
         self._health_check_interval = kwargs.get('health_check_interval', 10)
         self._health_check_running = False
+        self._health_check_log_interval = 10
+        self._health_check_counter = 0
         self.polygon = None
 
     async def _connect(self):
@@ -49,9 +54,12 @@ class StreamConn(object):
 
     async def _health_check(self):
         self._health_check_running = True
+        self._health_check_counter += 1
         while True:
             try:
-                print('H')
+                if self._health_check_counter >= self._health_check_log_interval:
+                    logger.warn('Healthcheck')
+                    self._health_check_counter = 0
                 await self._ensure_ws()
                 await asyncio.sleep(self._health_check_interval)
             except Exception as ex:
@@ -84,7 +92,6 @@ class StreamConn(object):
 
     async def _ensure_ws(self):
         if self._ws is not None and not self._ws.closed:
-            print('passed health check ok')
             return
         print('in _ensure_ws() -- ws is None, starting connect')
         self._ws = await self._connect()
