@@ -54,8 +54,8 @@ class StreamConn(object):
 
     async def _health_check(self):
         self._health_check_running = True
-        self._health_check_counter += 1
         while True:
+            self._health_check_counter += 1
             try:
                 if self._health_check_counter >= self._health_check_log_interval:
                     logger.warn('Healthcheck')
