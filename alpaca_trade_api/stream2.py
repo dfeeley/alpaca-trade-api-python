@@ -20,7 +20,6 @@ class StreamConn(object):
         self._ws = None
         self._health_check_interval = kwargs.get('health_check_interval', 10)
         self._health_check_running = False
-        self._health_check_log_interval = 10
         self._health_check_counter = 0
         self.polygon = None
 
@@ -56,14 +55,14 @@ class StreamConn(object):
         self._health_check_running = True
         while True:
             self._health_check_counter += 1
+            logger.warn('{}\r'.format('.' * self._health_check_counter))
+            if self._health_check_counter >= 10:
+                self._health_check_counter = 0
             try:
-                if self._health_check_counter >= self._health_check_log_interval:
-                    logger.warn('Healthcheck')
-                    self._health_check_counter = 0
                 await self._ensure_ws()
                 await asyncio.sleep(self._health_check_interval)
             except Exception as ex:
-                print('Health check - caught exception {}'.format(ex))
+                logger.error('Health check - caught exception {}'.format(ex))
 
     async def _consume_msg(self):
         ws = self._ws
